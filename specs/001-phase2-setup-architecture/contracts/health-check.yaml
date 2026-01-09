@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: Phase-2 Health Check API
+  description: Minimal API contract for verifying backend setup
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns server health status. Used to verify backend is running.
+      operationId: healthCheck
+      tags:
+        - System
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2026-01-08T12:00:00Z"
+                required:
+                  - status
+                  - timestamp
+
+  /api/v1:
+    get:
+      summary: API root information
+      description: Returns API version and available endpoints
+      operationId: apiRoot
+      tags:
+        - System
+      responses:
+        '200':
+          description: API information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  name:
+                    type: string
+                    example: "Todo API"
+                required:
+                  - version
+                  - name

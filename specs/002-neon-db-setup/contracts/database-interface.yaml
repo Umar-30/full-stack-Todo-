@@ -1,0 +1,125 @@
+# Database Interface Contract
+# Feature: 002-neon-db-setup
+# Date: 2026-01-08
+
+# This contract defines the internal database interface for the application.
+# It is not a REST API contract but documents the database layer interface.
+
+interface: DatabaseInterface
+version: "1.0.0"
+
+# Connection Configuration
+connection:
+  type: "PostgreSQL (Neon Serverless)"
+  driver: "asyncpg"
+  protocol: "postgresql+asyncpg"
+  ssl_mode: "require"
+
+  environment_variables:
+    DATABASE_URL:
+      description: "Full connection string with asyncpg driver"
+      format: "postgresql+asyncpg://<user>:<password>@<endpoint>-pooler.<region>.neon.tech/<dbname>?sslmode=require"
+      required: true
+      secret: true
+
+# Database Session Interface
+session:
+  type: "AsyncSession"
+  source: "sqlmodel.ext.asyncio.session"
+
+  lifecycle:
+    acquire:
+      method: "async with AsyncSession(engine)"
+      description: "Obtain session from engine"
+
+    commit:
+      method: "await session.commit()"
+      description: "Persist changes to database"
+
+    rollback:
+      method: "await session.rollback()"
+      description: "Revert uncommitted changes"
+
+    close:
+      method: "Automatic via context manager"
+      description: "Release session back to pool"
+
+# Engine Configuration
+engine:
+  type: "AsyncEngine"
+  source: "sqlalchemy.ext.asyncio.create_async_engine"
+
+  configuration:
+    echo:
+      development: true
+      production: false
+    pool_pre_ping: true
+    pool_size: 5
+    max_overflow: 10
+
+# Schema Operations
+schema:
+  create_tables:
+    method: "SQLModel.metadata.create_all(engine)"
+    description: "Create all defined tables"
+    idempotent: true
+
+  migrations:
+    tool: "Alembic"
+    location: "alembic/"
+    commands:
+      upgrade: "alembic upgrade head"
+      downgrade: "alembic downgrade -1"
+      generate: "alembic revision --autogenerate -m '<message>'"
+
+# Health Check Interface
+health_check:
+  method: "execute_health_check(session)"
+  query: "SELECT 1"
+  timeout_ms: 1000
+
+  response:
+    success:
+      status: "healthy"
+      connected: true
+    failure:
+      status: "unhealthy"
+      connected: false
+      error: "<error_message>"
+
+# Error Handling
+errors:
+  connection_error:
+    exception: "sqlalchemy.exc.OperationalError"
+    action: "Log error, return unhealthy status"
+
+  integrity_error:
+    exception: "sqlalchemy.exc.IntegrityError"
+    action: "Log error, rollback transaction"
+
+  timeout_error:
+    exception: "asyncio.TimeoutError"
+    action: "Log timeout, return unhealthy status"
+
+# Tables
+tables:
+  - name: users
+    primary_key: id
+    indexes: [email]
+
+  - name: categories
+    primary_key: id
+    foreign_keys: [user_id -> users.id]
+    indexes: [user_id, "(user_id, name)"]
+
+  - name: todos
+    primary_key: id
+    foreign_keys:
+      - user_id -> users.id
+      - category_id -> categories.id
+    indexes:
+      - user_id
+      - "(user_id, is_completed)"
+      - "(user_id, due_date)"
+      - "(user_id, priority)"
+      - category_id

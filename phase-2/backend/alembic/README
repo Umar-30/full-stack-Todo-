@@ -1,0 +1,8 @@
+Generic single-database configuration with async support for Neon PostgreSQL.
+
+Migration Commands:
+  alembic upgrade head       # Apply all migrations
+  alembic downgrade -1       # Revert last migration
+  alembic revision --autogenerate -m "message"  # Generate new migration
+  alembic current            # Show current revision
+  alembic history            # Show migration history

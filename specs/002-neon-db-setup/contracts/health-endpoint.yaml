@@ -1,0 +1,145 @@
+openapi: "3.1.0"
+info:
+  title: "Database Health Check API"
+  description: "Health check endpoint for database connectivity verification"
+  version: "1.0.0"
+
+servers:
+  - url: "http://localhost:8000"
+    description: "Development server"
+
+paths:
+  /health:
+    get:
+      summary: "Application Health Check"
+      description: |
+        Returns the health status of the application including database connectivity.
+        This endpoint does not require authentication.
+      operationId: "getHealth"
+      tags:
+        - Health
+      responses:
+        "200":
+          description: "Health check successful"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              examples:
+                healthy:
+                  summary: "All systems healthy"
+                  value:
+                    status: "healthy"
+                    timestamp: "2026-01-08T12:00:00Z"
+                    checks:
+                      database:
+                        status: "healthy"
+                        connected: true
+                        latency_ms: 5
+        "503":
+          description: "Service unhealthy"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              examples:
+                unhealthy:
+                  summary: "Database connection failed"
+                  value:
+                    status: "unhealthy"
+                    timestamp: "2026-01-08T12:00:00Z"
+                    checks:
+                      database:
+                        status: "unhealthy"
+                        connected: false
+                        error: "Connection refused"
+
+  /health/db:
+    get:
+      summary: "Database-Only Health Check"
+      description: |
+        Returns only the database connectivity status.
+        Useful for targeted monitoring of database health.
+        This endpoint does not require authentication.
+      operationId: "getDatabaseHealth"
+      tags:
+        - Health
+      responses:
+        "200":
+          description: "Database is healthy"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseHealthResponse"
+              example:
+                status: "healthy"
+                connected: true
+                latency_ms: 3
+                pool_size: 5
+                active_connections: 2
+        "503":
+          description: "Database is unhealthy"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseHealthResponse"
+              example:
+                status: "unhealthy"
+                connected: false
+                error: "Connection timeout"
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - checks
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+          description: "Overall health status"
+        timestamp:
+          type: string
+          format: date-time
+          description: "ISO 8601 timestamp of the health check"
+        checks:
+          type: object
+          properties:
+            database:
+              $ref: "#/components/schemas/DatabaseHealthResponse"
+
+    DatabaseHealthResponse:
+      type: object
+      required:
+        - status
+        - connected
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+          description: "Database health status"
+        connected:
+          type: boolean
+          description: "Whether database connection is established"
+        latency_ms:
+          type: integer
+          minimum: 0
+          description: "Database query latency in milliseconds"
+        pool_size:
+          type: integer
+          minimum: 0
+          description: "Configured connection pool size"
+        active_connections:
+          type: integer
+          minimum: 0
+          description: "Currently active connections in pool"
+        error:
+          type: string
+          description: "Error message if unhealthy"
+
+tags:
+  - name: Health
+    description: "Application and database health check endpoints"
