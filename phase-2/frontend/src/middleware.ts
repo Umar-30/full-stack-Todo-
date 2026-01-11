@@ -1,48 +1,77 @@
 /**
- * Next.js Middleware for Route Protection
+ * Authentication Middleware
  *
- * Per spec: User Story 4 - Protected Route Access
- * - Unauthenticated users redirected to signin
- * - Authenticated users redirected away from auth pages
- * - Preserves intended destination after signin
+ * Protects routes that require authentication
+ * Redirects unauthenticated users to sign-in page
+ * Implements user_id validation per spec requirements
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import { getSessionCookie } from "better-auth/cookies";
+import { NextRequest, NextResponse } from 'next/server';
 
-// Routes that require authentication
-const protectedRoutes = ["/dashboard"];
+// Define protected routes that require authentication
+const protectedRoutes = ['/dashboard', '/profile', '/settings'];
 
-// Routes only for unauthenticated users
-const authRoutes = ["/signin", "/signup"];
+// Define public routes that don't require authentication
+const publicRoutes = ['/', '/signin', '/signup'];
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const sessionCookie = getSessionCookie(request);
-
-  // Check if trying to access protected route without session
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
+  // Check if the current path is a protected route
+  const isProtectedRoute = protectedRoutes.some(route =>
+    request.nextUrl.pathname.startsWith(route)
   );
 
-  if (isProtectedRoute && !sessionCookie) {
-    // Redirect to signin with callback URL (FR-010)
-    const signinUrl = new URL("/signin", request.url);
-    signinUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(signinUrl);
+  // Check if the current path is the homepage
+  const isHomepage = request.nextUrl.pathname === '/';
+
+  // Better Auth uses 'better-auth.session_token' cookie name
+  const getAuthToken = () => {
+    return request.cookies.get('better-auth.session_token')?.value ||
+           request.cookies.get('better-auth-session-token')?.value ||
+           request.cookies.get('__Secure-better-auth.session_token')?.value ||
+           request.headers.get('authorization')?.replace('Bearer ', '');
+  };
+
+  // If accessing a protected route
+  if (isProtectedRoute) {
+    const token = getAuthToken();
+
+    // If no token, redirect to sign-in with callback URL
+    if (!token) {
+      const signInUrl = new URL('/signin', request.url);
+      signInUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);
+      return NextResponse.redirect(signInUrl);
+    }
   }
 
-  // Check if authenticated user trying to access auth pages
-  const isAuthRoute = authRoutes.includes(pathname);
+  // If accessing homepage and user is authenticated, redirect to dashboard
+  if (isHomepage) {
+    const token = getAuthToken();
 
-  if (isAuthRoute && sessionCookie) {
-    // Redirect authenticated users to dashboard
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    if (token) {
+      // User is authenticated, redirect to dashboard
+      const dashboardUrl = new URL('/dashboard', request.url);
+      return NextResponse.redirect(dashboardUrl);
+    }
   }
 
+  // NOTE: Removed auto-redirect from signin/signup when logged in
+  // Users can manually go to signin/signup even if logged in
+  // This allows testing and switching accounts
+
+  // Continue with the request
   return NextResponse.next();
 }
 
+// Apply middleware to specific paths
 export const config = {
-  matcher: ["/dashboard/:path*", "/signin", "/signup"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };

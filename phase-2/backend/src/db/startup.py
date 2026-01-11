@@ -120,8 +120,8 @@ async def database_lifespan(app) -> AsyncGenerator[None, None]:
     Usage:
         app = FastAPI(lifespan=database_lifespan)
     """
-    # Startup
-    await startup_database(verify_connection=True, create_tables=False)
+    # Startup - create_tables=True to auto-create missing tables
+    await startup_database(verify_connection=True, create_tables=True)
     yield
     # Shutdown
     await shutdown_database()
