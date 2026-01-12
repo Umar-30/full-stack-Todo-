@@ -5,6 +5,7 @@ This module creates and configures the FastAPI application
 with database lifecycle management and API routers.
 """
 
+import os
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,14 +14,23 @@ from src.db import database_lifespan
 from src.models.task import Task  # Import Task model to register it with SQLModel
 from src.routers.tasks import router as tasks_router
 
-# Allowed origins for CORS
+# Allowed origins for CORS - localhost + production
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
     "http://localhost:3002",
     "http://localhost:3003",
     "http://localhost:3004",
+    # Production Vercel URLs
+    "https://full-stack-todo.vercel.app",
+    "https://full-stack-todo-phi.vercel.app",
+    "https://full-stack-todo-git-main.vercel.app",
 ]
+
+# Add FRONTEND_URL from environment if set
+_frontend_url = os.getenv("FRONTEND_URL")
+if _frontend_url and _frontend_url not in ALLOWED_ORIGINS:
+    ALLOWED_ORIGINS.append(_frontend_url)
 
 # Create FastAPI application with database lifespans
 app = FastAPI(

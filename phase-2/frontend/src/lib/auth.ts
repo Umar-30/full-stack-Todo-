@@ -60,13 +60,19 @@ export const auth = betterAuth({
     },
   },
 
-  // Security settings - allow multiple dev ports
+  // Security settings - allow dev ports and production URLs
   trustedOrigins: [
     "http://localhost:3000",
     "http://localhost:3001",
     "http://localhost:3002",
     "http://localhost:3003",
     "http://localhost:3004",
+    // Production URLs (Vercel)
+    ...(process.env.NEXT_PUBLIC_APP_URL ? [process.env.NEXT_PUBLIC_APP_URL] : []),
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+    // Common Vercel patterns
+    "https://full-stack-todo.vercel.app",
+    "https://full-stack-todo-git-main.vercel.app",
   ],
 });
 
