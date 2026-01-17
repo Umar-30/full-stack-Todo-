@@ -8,6 +8,7 @@ import { TaskList } from '@/components/dashboard/task-list';
 import { CreateTaskForm } from '@/components/dashboard/create-task-form';
 import { taskApi } from '@/lib/api/task-api';
 import { getCurrentUserId, signOut } from '@/lib/auth/auth-client';
+import { useSession } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { LogOut, RefreshCw, Check, LayoutDashboard, ListTodo, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,9 @@ import { motion } from 'framer-motion';
 export default function DashboardPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
+  const { data: session } = useSession();
+  // Use name, or email username part, or 'User' as fallback
+  const userName = session?.user?.name || session?.user?.email?.split('@')[0] || 'User';
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -137,6 +141,12 @@ export default function DashboardPage() {
               >
                 <RefreshCw className="w-5 h-5" />
               </button>
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-medium text-white">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-sm text-gray-300">{userName}</span>
+              </div>
               <Button
                 variant="ghost"
                 onClick={handleSignOut}
@@ -159,7 +169,7 @@ export default function DashboardPage() {
           className="mb-8"
         >
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-            Welcome back! <span className="inline-block animate-wave">👋</span>
+            Welcome back, <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{userName}</span>! <span className="inline-block animate-wave">👋</span>
           </h1>
           <p className="text-gray-400 text-lg">
             Here's what's on your plate today

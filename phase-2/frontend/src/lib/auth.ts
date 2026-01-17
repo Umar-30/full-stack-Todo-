@@ -67,6 +67,9 @@ export const auth = betterAuth({
     "http://localhost:3002",
     "http://localhost:3003",
     "http://localhost:3004",
+    // Local network IPs for development (mobile testing)
+    "http://192.168.1.3:3000",
+    "http://192.168.1.3:3001",
     // Production URLs (Vercel)
     ...(process.env.NEXT_PUBLIC_APP_URL ? [process.env.NEXT_PUBLIC_APP_URL] : []),
     ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
