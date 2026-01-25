@@ -76,6 +76,9 @@ export const auth = betterAuth({
     // Common Vercel patterns
     "https://full-stack-todo.vercel.app",
     "https://full-stack-todo-git-main.vercel.app",
+    "https://full-stack-todo-j5vu.vercel.app",
+    // Hugging Face Space backend
+    "https://umar-30-deploy-todo.hf.space",
   ],
 });
 

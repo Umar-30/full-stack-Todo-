@@ -25,6 +25,7 @@ ALLOWED_ORIGINS = [
     "https://full-stack-todo.vercel.app",
     "https://full-stack-todo-phi.vercel.app",
     "https://full-stack-todo-git-main.vercel.app",
+    "https://full-stack-todo-j5vu.vercel.app",
 ]
 
 # Add FRONTEND_URL from environment if set
